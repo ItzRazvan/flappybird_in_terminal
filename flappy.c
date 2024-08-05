@@ -14,9 +14,21 @@ const int y_dist_between_col = 8;
 
 const int gen_col_interval = 12;
 
+
+typedef struct{
+    int x;
+    int upper_y;
+    int lower_y;
+} tower_pair;
+
 char empty[100];
 char flooor[100];
 char bird[100];
+tower_pair towers[10];
+int bird_position;
+
+char c;
+
 
 void empty_init(){
     memset(empty, ' ', sizeof(empty) - 2);
@@ -31,11 +43,28 @@ void floor_init(){
 }
 
 void bird_init(){
+    bird_position = bird_init_y;
     memset(bird, ' ', sizeof(empty) - 2);
-    bird[bird_init_x] = 'x';
+    bird[bird_init_x] = '>';
     bird[(sizeof(empty)) - 2] = '\n';
     bird[(sizeof(empty)) - 1] = '\0';
 }
+
+void generate_random_column_coord(int* upper_col, int* lower_col){
+    int upper_y = rand() % (lower_column_bound - upper_column_bound + 1) + upper_column_bound;
+
+    int lower_y = upper_y + y_dist_between_col;
+
+    *upper_col = upper_y;
+    *lower_col = lower_y;
+}
+
+void towers_init(int tower_number){
+    tower_number--;
+    towers[tower_number].x = 98;
+    generate_random_column_coord(&towers[tower_number].upper_y, &towers[tower_number].lower_y);
+}
+
 
 struct termios orig_termios;
 
@@ -56,14 +85,6 @@ void enable_raw_mode(){
 }
 
 
-void generate_random_column_coord(int* upper_col, int* lower_col){
-    int upper_y = rand() % (lower_column_bound - upper_column_bound + 1) + upper_column_bound;
-
-    int lower_y = upper_y + y_dist_between_col;
-
-    *upper_col = upper_y;
-    *lower_col = lower_y;
-}
 
 int main() {
     enable_raw_mode();
@@ -72,17 +93,14 @@ int main() {
     floor_init();
     bird_init();
 
-    int bird_position = bird_init_y;
-
-    char c = '\0';
+    int tower_number = 1;
+    towers_init(tower_number);
 
     int timer = -1;
 
-    int upper_y = 12;
-    int lower_y = 20;
-
     while(1){
         printf("\033[H\033[J");
+        c = '\0';
 
         fd_set readfds;
         FD_ZERO(&readfds);
@@ -102,10 +120,12 @@ int main() {
         timer = (timer + 1) % gen_col_interval;
 
         if(timer == 0){
-            generate_random_column_coord(&upper_y, &lower_y);
-
+            tower_number++;
+            tower_init(tower_number);
         }
         
+        for(int i = 0; i < tower_number; ++i)
+            towers[i].x--;
 
         if(bird_position >= num_rows || bird_position < 0)
             break;
@@ -129,8 +149,6 @@ int main() {
         }else{    
             bird_position+=1;
         }
-
-        c = '\0';
 
         usleep(80000);
     }
