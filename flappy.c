@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
+#include <termios.h>
 
 
 char empty[40];
@@ -26,15 +28,52 @@ void bird_init(){
     bird[(sizeof(empty)) - 1] = '\0';
 }
 
+struct termios orig_termios;
+
+void disable_raw_mode(){
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios);
+}
+
+void enable_raw_mode(){
+
+    tcgetattr(STDIN_FILENO, &orig_termios);
+    atexit(disable_raw_mode);
+
+    struct termios raw = orig_termios;
+
+    raw.c_lflag &= ~(ECHO | ICANON);
+
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+}
+
 int main() {
+    enable_raw_mode();
+
     empty_init();
     floor_init();
     bird_init();
 
     int bird_position = 3;
 
+    char c = '\0';
+
     while(1){
         printf("\033[H\033[J");
+
+
+        fd_set readfds;
+        FD_ZERO(&readfds);
+        FD_SET(STDIN_FILENO, &readfds);
+
+        struct timeval timeout;
+        timeout.tv_sec = 0;
+        timeout.tv_usec = 600000; // 0.6 seconds
+
+        int result = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &timeout);
+
+        if(result > 0){
+            read(STDIN_FILENO, &c, 1);
+        }
 
         if(bird_position == 7)
             break;
@@ -50,15 +89,17 @@ int main() {
 
         printf("%s", flooor);
 
+        if(c == 'q')
+            return 0;
 
-        //here we will check if the space key is hit
+        if(c == ' ')
+            bird_position--;
+        else    
+            bird_position++;
 
+        c = '\0';
 
-        bird_position++;
-
-
-        //we ll make it sleep 0.8 seconds, so it looks nice and its updated quite fast
-        sleep(1);
+        usleep(400000);
     }
 
     printf("YUU LOST\n");
