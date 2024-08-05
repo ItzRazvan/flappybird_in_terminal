@@ -55,16 +55,14 @@ void enable_raw_mode(){
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 }
 
-void * generate_random_column_coord(){
+
+void generate_random_column_coord(int* upper_col, int* lower_col){
     int upper_y = rand() % (lower_column_bound - upper_column_bound + 1) + upper_column_bound;
 
     int lower_y = upper_y + y_dist_between_col;
 
-    int* col_y = malloc(sizeof(int) * 2);
-    col_y[0] = upper_y;
-    col_y[1] = lower_y;
-
-    return col_y;
+    *upper_col = upper_y;
+    *lower_col = lower_y;
 }
 
 int main() {
@@ -80,14 +78,11 @@ int main() {
 
     int timer = -1;
 
-
     int upper_y = 12;
     int lower_y = 20;
 
     while(1){
         printf("\033[H\033[J");
-
-        tcflush(STDIN_FILENO, TCIFLUSH);
 
         fd_set readfds;
         FD_ZERO(&readfds);
@@ -95,7 +90,7 @@ int main() {
 
         struct timeval timeout;
         timeout.tv_sec = 0;
-        timeout.tv_usec = 100000;
+        timeout.tv_usec = 80000;
 
         int result = select(STDIN_FILENO + 1, &readfds, NULL, NULL, &timeout);
 
@@ -107,17 +102,10 @@ int main() {
         timer = (timer + 1) % gen_col_interval;
 
         if(timer == 0){
-
-            int * col_y = generate_random_column_coord();
-
-            upper_y = *col_y;
-            lower_y = *(col_y + 1);
-
-            printf("%d, %d\n\n", upper_y, lower_y);
-
-            free(col_y);
+            generate_random_column_coord(&upper_y, &lower_y);
 
         }
+        
 
         if(bird_position >= num_rows || bird_position < 0)
             break;
@@ -144,7 +132,7 @@ int main() {
 
         c = '\0';
 
-        usleep(75000);
+        usleep(80000);
     }
 
     printf("YUU LOST\n");
