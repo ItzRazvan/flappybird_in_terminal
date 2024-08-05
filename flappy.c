@@ -31,21 +31,37 @@ int main() {
     floor_init();
     bird_init();
 
+    int bird_position = 3;
+
     while(1){
-        printf("%s", empty);
-        printf("%s", empty);
-        printf("%s", empty);
+        printf("\033[H\033[J");
+
+        if(bird_position == 7)
+            break;
+
+        for(int i = 0; i < bird_position; ++i)
+            printf("%s", empty);
 
         printf("%s", bird);
 
-        printf("%s", empty);
-        printf("%s", empty);
-        printf("%s", empty);
+        for(int i = bird_position + 1; i < 7; ++i){
+            printf("%s", empty); 
+        }
 
         printf("%s", flooor);
 
 
+        //here we will check if the space key is hit
+
+
+        bird_position++;
+
+
         //we ll make it sleep 0.8 seconds, so it looks nice and its updated quite fast
-        usleep(80000);
+        sleep(1);
     }
-}
+
+    printf("YUU LOST\n");
+
+    return 0;
+} 
