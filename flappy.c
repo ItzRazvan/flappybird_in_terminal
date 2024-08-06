@@ -2,30 +2,42 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <termios.h>
 
 const int bird_init_y = 14;
 const int bird_init_x = 8;
-const int num_rows = 29;
+
+
+#define num_rows 29
+#define num_colums 98
+
 
 const int lower_column_bound = 18;
-const int upper_column_bound = 10;
+const int upper_column_bound = 4;
 const int y_dist_between_col = 8;
 
-const int gen_col_interval = 12;
+const int gen_col_interval = 40;
 
 
 typedef struct{
     int x;
+    int upper_const;
     int upper_y;
     int lower_y;
+    int lower_const;
 } tower_pair;
 
-char empty[100];
-char flooor[100];
-char bird[100];
+typedef struct{
+    int x;
+    int y;
+} Bird;
+
+char empty[num_colums + 2];
+char flooor[num_colums + 2];
 tower_pair towers[10];
-int bird_position;
+Bird bird;
+int tower_number;
 
 char c;
 
@@ -42,6 +54,7 @@ void floor_init(){
     flooor[(sizeof(empty)) - 1] = '\0';
 }
 
+/*
 void bird_init(){
     bird_position = bird_init_y;
     memset(bird, ' ', sizeof(empty) - 2);
@@ -49,20 +62,29 @@ void bird_init(){
     bird[(sizeof(empty)) - 2] = '\n';
     bird[(sizeof(empty)) - 1] = '\0';
 }
+*/
+
+void bird_init(){
+    bird.x = bird_init_x;
+    bird.y = bird_init_y;
+}
 
 void generate_random_column_coord(int* upper_col, int* lower_col){
     int upper_y = rand() % (lower_column_bound - upper_column_bound + 1) + upper_column_bound;
 
-    int lower_y = upper_y + y_dist_between_col;
+    int lower_y = upper_y + y_dist_between_col + 1;
 
     *upper_col = upper_y;
     *lower_col = lower_y;
 }
 
-void towers_init(int tower_number){
+void tower_init(int tower_number){
     tower_number--;
-    towers[tower_number].x = 98;
+    towers[tower_number].x = num_colums;
     generate_random_column_coord(&towers[tower_number].upper_y, &towers[tower_number].lower_y);
+
+    towers[tower_number].upper_const = 1;
+    towers[tower_number].lower_const = num_rows-1;
 }
 
 
@@ -84,6 +106,29 @@ void enable_raw_mode(){
     tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 }
 
+void gen_and_print_lines(){
+    for(int y = 1; y < num_rows; ++y){
+        for(int x = 1; x <= num_colums; ++x){
+            bool printed = 0;
+            if(bird.x == x && bird.y == y){
+                printf(">");
+                printed = 1;
+            }
+            for(int i = 0; i < tower_number; ++i){
+                if(!printed && towers[i].x == x && ((y >= towers[i].upper_const && y <= towers[i].upper_y) || (y >= towers[i].lower_y && y <= towers[i].lower_const))){
+                    printf("|");
+                    printed = 1;
+                }
+            }
+            if(!printed)
+                printf(" ");
+        }
+        printf("\n");
+    }
+
+    printf("%s", flooor);
+}
+
 
 
 int main() {
@@ -93,14 +138,19 @@ int main() {
     floor_init();
     bird_init();
 
-    int tower_number = 1;
-    towers_init(tower_number);
+    tower_number = 1;
+    tower_init(tower_number);
 
-    int timer = -1;
+    int timer = 0;
 
-    while(1){
+    bool alive = 1;
+
+    while(alive){
         printf("\033[H\033[J");
         c = '\0';
+
+        if(bird.y >= num_rows || bird.y <= 0)
+            alive = 0;
 
         fd_set readfds;
         FD_ZERO(&readfds);
@@ -127,28 +177,32 @@ int main() {
         for(int i = 0; i < tower_number; ++i)
             towers[i].x--;
 
-        if(bird_position >= num_rows || bird_position < 0)
-            break;
+        
 
-        for(int i = 0; i < bird_position; ++i)
+        /*for(int i = 1; i < bird_position; ++i)
             printf("%s", empty);
 
         printf("%s", bird);
 
-        for(int i = bird_position + 1; i < num_rows; ++i){
+        for(int i = bird_position + 1; i <= num_rows - 1; ++i){
             printf("%s", empty); 
-        }
+        } */
 
-        printf("%s", flooor);
+       gen_and_print_lines();
 
         if(c == 'q')
             return 0;
 
         if(c == ' '){
-            bird_position-=5;
+            bird.y-=5;
         }else{    
-            bird_position+=1;
+            bird.y+=1;
         }
+
+        for(int i = 0; i < tower_number; ++i)
+            if((towers[i].x == bird.x && ((bird.y <= towers[i].upper_y) || (bird.y >= towers[i].lower_y))))
+                alive = 0;
+        
 
         usleep(80000);
     }
