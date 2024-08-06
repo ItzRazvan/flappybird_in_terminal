@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>
+#include <sys/ioctl.h>
 #include <termios.h>
 
 #define bird_init_y 14
@@ -12,8 +13,9 @@
 #define num_rows 29
 #define num_colums 100
 
-#define lower_column_bound 18
-#define upper_column_bound 4
+const int lower_column_bound = (num_rows - 1) - 10;
+const int upper_column_bound = num_rows - ((num_rows - 1) - 3);
+
 #define y_dist_between_col 8
 
 #define gen_col_interval 25
