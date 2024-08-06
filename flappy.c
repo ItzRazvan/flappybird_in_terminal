@@ -3,6 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <time.h>
 #include <termios.h>
 
 const int bird_init_y = 14;
@@ -10,15 +11,14 @@ const int bird_init_x = 8;
 
 
 #define num_rows 29
-#define num_colums 98
+#define num_colums 100
 
 
 const int lower_column_bound = 18;
 const int upper_column_bound = 4;
 const int y_dist_between_col = 8;
 
-const int gen_col_interval = 40;
-
+const int gen_col_interval = 25;
 
 typedef struct{
     int x;
@@ -60,6 +60,8 @@ void bird_init(){
 }
 
 void generate_random_column_coord(int* upper_col, int* lower_col){
+    srand(time(NULL));
+
     int upper_y = rand() % (lower_column_bound - upper_column_bound + 1) + upper_column_bound;
 
     int lower_y = upper_y + y_dist_between_col + 1;
@@ -75,6 +77,11 @@ void tower_init(int tower_number){
 
     towers[tower_number].upper_const = 1;
     towers[tower_number].lower_const = num_rows-1;
+}
+
+void tower_regen(int tower_number){
+    towers[tower_number].x = num_colums;
+    generate_random_column_coord(&towers[tower_number].upper_y, &towers[tower_number].lower_y);
 }
 
 
@@ -132,6 +139,9 @@ int main() {
     tower_init(tower_number);
 
     int timer = 0;
+    int tower_reuse = 0;
+
+    const int max_nr_towers = (num_colums / gen_col_interval) + 2;
 
     int score = 0;
 
@@ -161,8 +171,15 @@ int main() {
         timer = (timer + 1) % gen_col_interval;
 
         if(timer == 0){
-            tower_number++;
-            tower_init(tower_number);
+            if(tower_number < max_nr_towers){
+                tower_number++;
+                tower_init(tower_number);
+            }
+            if(tower_number == max_nr_towers){
+                tower_regen(tower_reuse);
+
+                tower_reuse = (tower_reuse + 1) % max_nr_towers;
+            } 
         }
         
         for(int i = 0; i < tower_number; ++i)
@@ -198,9 +215,9 @@ int main() {
     }
 
     if(!alive)
-        printf("YUU LOST\n");
+        printf("YUU LOST!!!\n");
     else   
-        printf("You quit\nYour score was: %d\n", score);
+        printf("You quit!\nYour score was: %d\n", score);
 
     return 0;
 } 
