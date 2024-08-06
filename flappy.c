@@ -6,19 +6,17 @@
 #include <time.h>
 #include <termios.h>
 
-const int bird_init_y = 14;
-const int bird_init_x = 8;
-
+#define bird_init_y 14
+#define bird_init_x 8
 
 #define num_rows 29
 #define num_colums 100
 
+#define lower_column_bound 18
+#define upper_column_bound 4
+#define y_dist_between_col 8
 
-const int lower_column_bound = 18;
-const int upper_column_bound = 4;
-const int y_dist_between_col = 8;
-
-const int gen_col_interval = 25;
+#define gen_col_interval 25
 
 typedef struct{
     int x;
@@ -144,14 +142,18 @@ int main() {
     const int max_nr_towers = (num_colums / gen_col_interval) + 2;
 
     int score = 0;
+    bool pause = 0;
 
     bool alive = 1;
     while(alive){
-        printf("\033[H\033[J");
         c = '\0';
+
+if(!pause){
+        printf("\033[H\033[J");
 
         if(bird.y >= num_rows || bird.y <= 0)
             alive = 0;
+}
 
         fd_set readfds;
         FD_ZERO(&readfds);
@@ -167,7 +169,7 @@ int main() {
             read(STDIN_FILENO, &c, 1);
         }
 
-
+if(!pause){
         timer = (timer + 1) % gen_col_interval;
 
         if(timer == 0){
@@ -188,9 +190,6 @@ int main() {
 
        gen_and_print_lines();
 
-        if(c == 'q')
-            break;
-
         if(c == ' '){
             bird.y-=5;
         }else{    
@@ -208,8 +207,15 @@ int main() {
         }
 
 
-        printf("Your score is: %d\n", score);
-        
+        printf("(Pause on ESC, Quit on q)\nYour score is: %d\n", score);
+} 
+        if(c == 'q'){
+            break;
+        }else if((int)c == 27 && !pause){
+            pause = 1;
+        }else if((int)c == 27 && pause){
+            pause = 0;
+        }
 
         usleep(80000);
     }
@@ -217,7 +223,7 @@ int main() {
     if(!alive)
         printf("YUU LOST!!!\n");
     else   
-        printf("You quit!\nYour score was: %d\n", score);
+        printf("You quit!\n");
 
     return 0;
 } 
