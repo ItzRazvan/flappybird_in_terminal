@@ -54,16 +54,6 @@ void floor_init(){
     flooor[(sizeof(empty)) - 1] = '\0';
 }
 
-/*
-void bird_init(){
-    bird_position = bird_init_y;
-    memset(bird, ' ', sizeof(empty) - 2);
-    bird[bird_init_x] = '>';
-    bird[(sizeof(empty)) - 2] = '\n';
-    bird[(sizeof(empty)) - 1] = '\0';
-}
-*/
-
 void bird_init(){
     bird.x = bird_init_x;
     bird.y = bird_init_y;
@@ -126,7 +116,7 @@ void gen_and_print_lines(){
         printf("\n");
     }
 
-    printf("%s", flooor);
+    printf("%s\n", flooor);
 }
 
 
@@ -143,8 +133,9 @@ int main() {
 
     int timer = 0;
 
-    bool alive = 1;
+    int score = 0;
 
+    bool alive = 1;
     while(alive){
         printf("\033[H\033[J");
         c = '\0';
@@ -177,21 +168,11 @@ int main() {
         for(int i = 0; i < tower_number; ++i)
             towers[i].x--;
 
-        
-
-        /*for(int i = 1; i < bird_position; ++i)
-            printf("%s", empty);
-
-        printf("%s", bird);
-
-        for(int i = bird_position + 1; i <= num_rows - 1; ++i){
-            printf("%s", empty); 
-        } */
 
        gen_and_print_lines();
 
         if(c == 'q')
-            return 0;
+            break;
 
         if(c == ' '){
             bird.y-=5;
@@ -199,15 +180,27 @@ int main() {
             bird.y+=1;
         }
 
-        for(int i = 0; i < tower_number; ++i)
-            if((towers[i].x == bird.x && ((bird.y <= towers[i].upper_y) || (bird.y >= towers[i].lower_y))))
-                alive = 0;
+        for(int i = 0; i < tower_number; ++i){
+            if(towers[i].x == bird.x){
+                if((bird.y <= towers[i].upper_y) || (bird.y >= towers[i].lower_y)){
+                    alive = 0;
+                }else{
+                    score++;
+                }
+            }
+        }
+
+
+        printf("Your score is: %d\n", score);
         
 
         usleep(80000);
     }
 
-    printf("YUU LOST\n");
+    if(!alive)
+        printf("YUU LOST\n");
+    else   
+        printf("You quit\nYour score was: %d\n", score);
 
     return 0;
 } 
